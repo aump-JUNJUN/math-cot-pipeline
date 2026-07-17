@@ -1,0 +1,58 @@
+# vLLM 部署配置（deploy/vllm/ 读取 → 转成 vLLM CLI 参数）
+# 前置：python -m src.train.export → outputs/merged/best
+
+# 用法：
+#   bash deploy/vllm/start.sh
+# API 调用示例 → deploy/vllm/README.md
+# 客户端默认参数 → 本文件 defaults 块（与 eval_ft.yaml 对齐）
+
+# ── 1. 基础与服务（决定「怎么跑」）──
+model:
+  # vLLM --model 【必填】本地 merged 目录或 Hub model id
+  path: outputs/merged/best
+  model_id: Qwen/Qwen2.5-Math-7B-Instruct   # 文档追溯
+
+
+server:
+  # vLLM --host / --port 【Docker 必改 host 为 0.0.0.0】
+  host: 0.0.0.0
+  port: 8000
+  # vLLM --served-model-name 【推荐】API 里的 model 别名
+  served_model_name: math-cot
+  # vLLM --api-key 【本地可 null；公网/内网暴露时必填】
+  api_key: null
+  # vLLM --task 【默认 auto；Embedding/Reward 模型才改】
+  task: auto
+
+# ── 2. 模型与推理（防 OOM、显存）──
+vllm:
+  trust_remote_code: true          # --trust-remote-code Qwen 等建议开
+  dtype: auto                      # --dtype；老卡可改 half
+  max_model_len: 8192              # --max-model-len 【极重要】别用默认 128k
+  # quantization: awq                # --quantization；显存紧时再开（需量化权重）
+  # quant: gptq                      # 与 quantization 二选一，看模型格式
+  # hf_config_path: null            # --hf-config-path；极少用
+
+# ── 3. 硬件与性能 ──
+  tensor_parallel_size: 1          # --tensor-parallel-size；多卡=GPU 数
+  # device: cuda                   # --device；NPU/AMD 再改
+  gpu_memory_utilization: 0.90     # --gpu-memory-utilization
+  # kv_cache_dtype: fp8            # --kv-cache-dtype；4090/H100 等可试
+  enable_prefix_caching: true      # --enable-prefix-caching；固定 system 很合适
+  max_num_seqs: 128                # --max-num-seqs；显存紧可降到 64
+
+# ── 4. 高级 / 工程化 ──
+  # chat_template: outputs/merged/best/chat_template.jinja  # --chat-template
+  # max_logprobs: 20               # --max-logprobs
+  # enforce_eager: false
+  # log_config: null               # --log-config；生产 JSON 日志
+  override_generation_config:      # --override-generation-config（JSON）
+    temperature: 0.0
+    top_p: 1.0
+
+# ── 客户端默认（OpenAI API 请求；可与 override 对齐）──
+defaults:
+  system_prompt: You are a math assistant that can answer questions and help with tasks.
+  temperature: 0.0
+  max_tokens: 1024                 # CoT 要够长；别用 256
+  top_p: 1.0

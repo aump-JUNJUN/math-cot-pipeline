@@ -1,0 +1,59 @@
+# configs/data.yaml
+#目标是完成数据基本情况，后续格式转化在train
+# NuminaMath-CoT: download → clean → split (small subset for pipeline demo) → output
+
+#数据位置
+#随机性
+seed: 42 
+raw_dir: data/raw
+processed_dir: data/processed
+
+
+#数据来源
+sources:
+  numina_math_cot:
+    enabled: true
+    hf_id: AI-MO/NuminaMath-CoT
+    split_download: train
+    max_samples: 1000          # 在 filter 之后，最多留 1000 条
+    filter:
+      field: source            # 数据集里的字段名
+      values: [olympiads]      # 只要奥林匹克这类
+    field_map:
+      source: source           # 保留子来源，写入 jsonl
+      problem: problem
+      solution: solution
+      # messages: messages     # 若要 chat 原字段，用 messages
+ 
+
+#数据清洗，长度跟后续微调最大长度有关
+cleaning:
+  drop_empty: true
+  drop_no_answer: true
+  max_question_chars: 8000
+  max_solution_chars: 16000
+  dedupe_by: question_hash
+  answer_extract: #抽取的三种不同策略
+    enabled: true
+    strategies:
+      - boxed
+
+
+#数据划分, 800 train / 100 val / 100 test  评测部分在train中单独呈现吧
+split:
+  test_ratio: 0.1
+  holdout_test: true
+
+
+#数据输出 manifest_file进行小结记录（清洗，划分）
+output:
+  train_file: data/processed/train.jsonl
+  test_file: data/processed/test.jsonl
+  manifest_file: data/processed/manifest.json
+
+#其中answer是solution的最终答案，Y值  COT是思维链
+schema:
+  fields: [id,source,problem,solution,COT,answer,message]
+
+  
+

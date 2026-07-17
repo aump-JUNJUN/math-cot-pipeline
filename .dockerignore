@@ -1,0 +1,52 @@
+# Git / IDE
+.git
+.gitignore
+.github
+.idea
+.vscode
+.cursor
+
+# Python 缓存与虚拟环境
+__pycache__
+*.py[cod]
+*.egg-info
+.eggs
+.venv
+venv
+env
+.pytest_cache
+.ruff_cache
+.mypy_cache
+
+# 环境与密钥
+.env
+.env.*
+
+# 大产物（运行时 volume 挂载，不必打进 build context）
+outputs
+reports
+data/raw
+data/processed
+
+# 模型权重与缓存（防误 COPY 进镜像层）
+*.bin
+*.safetensors
+*.pt
+*.ckpt
+*.gguf
+.cache
+huggingface
+modelscope
+
+# 实验追踪
+wandb
+swanlab
+logs
+*.log
+
+# 文档 / 非 build 必需（可选，减小 context）
+*.md
+!docker/**
+
+# Docker 本地覆盖
+docker-compose.override.yml

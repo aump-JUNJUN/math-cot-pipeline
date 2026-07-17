@@ -1,0 +1,2 @@
+# deploy/vllm/render_cmd.py：解析 configs/serve.yaml
+pyyaml>=6.0

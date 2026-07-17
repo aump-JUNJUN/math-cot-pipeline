@@ -1,0 +1,2 @@
+# Default install: training stack (includes base via train.txt)
+-r requirements/train.txt

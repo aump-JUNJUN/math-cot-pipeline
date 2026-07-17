@@ -1,0 +1,153 @@
+# math-cot-pipeline 一体 Compose
+#
+# 一个文件编排：数据 / 训练 / 评测 / 报告 / 单元测试 + 可选 vLLM API
+#
+# ── 前置 ──
+#   - 安装 Docker + Docker Compose v2
+#   - GPU 步骤需 NVIDIA 驱动 + nvidia-container-toolkit
+#   - 首次构建：docker compose build
+#
+# ── Profiles（单卡不要同时跑 infer 和 vLLM）──
+#   cpu    无 GPU：data / test / report / eval-ft-metrics（仅 split+metrics）
+#   repro  要 GPU：train / export / eval-ft / eval-base
+#   full   cpu + repro 合集
+#   serve  要 GPU：vllm-api（独立官方镜像，方案 B）
+#
+# ── 常用命令 ──
+#   docker compose build
+#   docker compose --profile cpu run --rm test
+#   docker compose --profile cpu run --rm data
+#   docker compose --profile repro run --rm eval-ft
+#   docker compose --profile serve up -d vllm-api
+#
+# 详见 scripts/README.md、deploy/vllm/README.md
+
+name: math-cot-pipeline
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 可复用片段：pipeline 镜像（docker/Dockerfile）共用配置
+# ─────────────────────────────────────────────────────────────────────────────
+x-pipeline: &pipeline
+  build:
+    context: .
+    dockerfile: docker/Dockerfile
+  image: math-cot-pipeline:latest
+  working_dir: /workspace
+  volumes:
+    # 整仓挂载：改代码无需 rebuild；outputs/ reports/ 也落在宿主机
+    - .:/workspace
+  environment: &pipeline_env
+    SKIP_CONDA: "1"
+    WORKSPACE: /workspace
+    # 可选：国内镜像 / 缓存目录（宿主机 .env 或 export 覆盖）
+    HF_ENDPOINT: ${HF_ENDPOINT:-}
+    HF_HOME: ${HF_HOME:-/workspace/.cache/huggingface}
+    MODELSCOPE_CACHE: ${MODELSCOPE_CACHE:-/workspace/.cache/modelscope}
+    CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES:-0}
+  entrypoint: ["/usr/local/bin/entrypoint.sh"]
+
+# GPU  reservation（Compose v2 + nvidia-container-toolkit）
+x-gpu: &gpu
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+
+services:
+  # ── 构建入口（不跑业务，仅方便 docker compose build pipeline）──
+  pipeline:
+    <<: *pipeline
+    profiles: [build]
+    command: ["bash", "-lc", "echo 'pipeline image ready'"]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # CPU 服务（无需 GPU）
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  # 单元测试：pytest tests/（27 用例，不依赖 GPU）
+  test:
+    <<: *pipeline
+    profiles: [cpu, full]
+    command: ["pytest", "tests/", "-v"]
+
+  # 数据：download → clean → train.jsonl / test.jsonl
+  data:
+    <<: *pipeline
+    profiles: [cpu, full]
+    command: ["bash", "scripts/run_data.sh"]
+
+  # 多 run 对比报告（需 reports/metrics/* 已存在）
+  report:
+    <<: *pipeline
+    profiles: [cpu, full]
+    command: ["bash", "scripts/run_report.sh"]
+
+  # 仅 split + run_metrics（跳过 infer；适合已有 ft.jsonl、无 GPU 算 metrics 时）
+  # 注意：CoT 指标 bert-score 仍较吃内存
+  eval-ft-metrics:
+    <<: *pipeline
+    profiles: [cpu, full]
+    command:
+      - bash
+      - -lc
+      - |
+        python -m src.eval.split --config configs/eval_ft.yaml
+        python -m src.eval.run_metrics --config configs/eval_ft.yaml --task all
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # GPU 服务（pipeline 镜像 + NVIDIA GPU）
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  train-smoke:
+    <<: [*pipeline, *gpu]
+    profiles: [repro, full]
+    command: ["bash", "scripts/run_train_smoke.sh"]
+
+  train:
+    <<: [*pipeline, *gpu]
+    profiles: [repro, full]
+    command: ["bash", "scripts/run_train.sh"]
+
+  export:
+    <<: [*pipeline, *gpu]
+    profiles: [repro, full]
+    command: ["python", "-m", "src.train.export"]
+
+  eval-ft:
+    <<: [*pipeline, *gpu]
+    profiles: [repro, full]
+    command: ["bash", "scripts/run_eval_ft.sh"]
+
+  eval-base:
+    <<: [*pipeline, *gpu]
+    profiles: [repro, full]
+    command: ["bash", "scripts/run_eval_base.sh"]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # vLLM API（方案 B：官方镜像，不共用 pipeline Dockerfile）
+  # 前置：outputs/merged/best 存在（python -m src.train.export）
+  # ═══════════════════════════════════════════════════════════════════════════
+  vllm-api:
+    profiles: [serve]
+    image: vllm/vllm-openai:latest
+    ports:
+      - "${VLLM_PORT:-8000}:8000"
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - ./outputs/merged/best:/model:ro
+    environment:
+      MODEL_PATH: /model
+      SERVE_CONFIG: /workspace/configs/serve.yaml
+      SKIP_CONDA: "1"
+    command: ["bash", "deploy/vllm/start.sh"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

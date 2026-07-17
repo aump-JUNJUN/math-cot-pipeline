@@ -1,0 +1,18 @@
+# Host-side LoRA fine-tuning via ms-swift
+-r base.txt
+
+# Core trainer (pulls peft / transformers / modelscope / accelerate, etc.)
+ms-swift>=3.0.0
+
+# train.yaml: report_to: ["tensorboard"]
+tensorboard>=2.14.0
+
+# sft.py: 训练结束后保存 outputs/lora/images/loss.png
+matplotlib>=3.8.0
+
+# Install torch for YOUR CUDA first, e.g. from https://pytorch.org
+# pip install torch --index-url https://download.pytorch.org/whl/cu124
+# pip install -r requirements/train.txt
+# Optional (enable when needed):
+# deepspeed>=0.14.0          # runtime.backend=deepspeed
+# bitsandbytes>=0.43.0       # QLoRA / 4bit 省显存

@@ -1,0 +1,83 @@
+# ft 微调模型评测链：infer → split → answer_metrics → cot_metrics
+#
+# 用法：
+#   python -m src.eval.infer       --config configs/eval_ft.yaml
+#   python -m src.eval.split       --config configs/eval_ft.yaml
+#   python -m src.eval.run_metrics --config configs/eval_ft.yaml
+#
+# 相关配置：
+#   base 链 → configs/eval_base.yaml
+#   对比报告 → configs/compare.yaml（python -m src.eval.report）
+
+
+infer:
+  model_id: Qwen/Qwen2.5-Math-7B-Instruct
+  model_path: outputs/merged/best
+  model_type: qwen2_5_math          # 本地 merged 模型加载时 ms-swift 3.4 需显式指定
+  system_prompt: You are a math assistant that can answer questions and help with tasks.
+
+
+  test_file: data/processed/test.jsonl
+  infer_schema:
+    messages:
+      - role: user
+        content: "<problem>"
+
+  prediction_file: reports/predictions/ft.jsonl
+  temperature: 0.0
+  max_new_tokens: 1024
+  infer_limit: null
+  max_batch_size: 2
+  runtime:
+    cuda_visible_devices: "0"   # 推理用哪张 GPU；无 GPU 环境不要跑 infer
+
+
+split:
+  prediction_file: reports/predictions/ft.jsonl
+  strategies:
+    - boxed
+  cot_mode: before_answer
+  answer_file: reports/predictions/ft_answers.jsonl
+  cot_file: reports/predictions/ft_cots.jsonl
+
+
+answer_metrics:
+  pred_file: reports/predictions/ft_answers.jsonl
+  gold_file: data/processed/test.jsonl
+  gold_field: answer
+  pred_field: pred_answer
+  join_key: id
+  metrics: [exact_match, acc, extract_rate] #暂时不加入性能的评测指标
+  metric_args:
+    acc:
+      numeric: true
+  output_file: reports/metrics/ft_answer.json
+
+
+cot_metrics:
+  pred_file: reports/predictions/ft_cots.jsonl
+  gold_file: data/processed/test.jsonl
+  gold_field: COT
+  pred_field: pred_cot
+  context_field: problem          # informativeness_chain：整段 pred_cot vs 题目
+  join_key: id
+  metrics: [bert_score, informativeness_chain]
+  metric_args:
+    bert_score:
+      model_type: microsoft/deberta-base-mnli     # 因内存问题变为基础模型
+      batch_size: 1
+      device: cuda
+      dtype: float32
+    informativeness_chain:
+      embedding_model: all-mpnet-base-v2
+      # 可选更重：facebook/roscoe-512-roberta-base
+  output_file: reports/metrics/ft_cot.json
+
+
+output:
+  report_dir: reports/
+  metrics_dir: reports/metrics/
+  
+
+
+

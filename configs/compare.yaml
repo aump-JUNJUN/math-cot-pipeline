@@ -1,0 +1,34 @@
+# report.py 专用：对比多条 eval 链的聚合指标（不跑 infer / split / run_metrics）
+#
+# 前置：各 run 已分别跑完 run_metrics，产出 reports/metrics/*_answer.json 与 *_cot.json
+#   base  → configs/eval_base.yaml
+#   ft    → configs/eval_ft.yaml
+#
+# 启动：
+#   python -m src.eval.report
+# 产出：reports/metrics/compare_all.json + compare_all.png
+#
+# 新增微调版本：复制 eval_ft.yaml → eval_ft_<name>.yaml，跑完 metrics 后在 runs 里追加一项。
+
+compare:
+  output_file: reports/metrics/compare_all.json
+  plot_file: reports/metrics/compare_all.png   # 设为 null 则不出图
+  baseline: base   # delta 相对 baseline 计算；设为 null 则只输出 values、不算 delta
+
+  runs:
+    - name: base
+      answer_metrics: reports/metrics/base_answer.json
+      cot_metrics: reports/metrics/base_cot.json
+
+    - name: ft_best
+      answer_metrics: reports/metrics/ft_answer.json
+      cot_metrics: reports/metrics/ft_cot.json
+
+    # 示例：第二个微调实验（跑完 eval_ft_v2.yaml 后取消注释）
+    # - name: ft_v2
+    #   answer_metrics: reports/metrics/ft_v2_answer.json
+    #   cot_metrics: reports/metrics/ft_v2_cot.json
+
+    # - name: ft_ckpt40
+    #   answer_metrics: reports/metrics/ft_ckpt40_answer.json
+    #   cot_metrics: reports/metrics/ft_ckpt40_cot.json

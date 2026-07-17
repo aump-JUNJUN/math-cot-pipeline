@@ -1,0 +1,18 @@
+# Eval: infer(split 用 base) + answer/cot metrics
+-r base.txt
+
+evalscope==1.8.0
+
+# answer: acc (math_equal)
+# cot: bert_score, informativeness_chain (sentence-transformers)
+bert-score>=0.3.13
+sentence-transformers>=2.2.0
+
+# 若尚未安装 PyTorch（训练环境一般已有）：
+# pip install torch --index-url https://download.pytorch.org/whl/cu124
+
+
+matplotlib>=3.8.0
+
+
+

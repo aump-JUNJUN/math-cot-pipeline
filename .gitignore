@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Data (keep folders, ignore large files)
+data/raw/**
+data/processed/**
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Training / eval artifacts
+outputs/**
+reports/**
+!outputs/.gitkeep
+!reports/.gitkeep
+
+# Model / HF caches (if downloaded into repo by mistake)
+*.bin
+*.safetensors
+*.pt
+*.ckpt
+*.gguf
+.cache/
+huggingface/
+modelscope/
+
+# Logs
+*.log
+logs/
+wandb/
+swanlab/
+
+# Docker override (local secrets)
+docker-compose.override.yml
+

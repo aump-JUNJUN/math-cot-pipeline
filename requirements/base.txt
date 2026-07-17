@@ -1,0 +1,6 @@
+# Shared by data cleaning, light eval, and utilities
+datasets>=2.20.0
+pyyaml>=6.0.1
+tqdm>=4.66.0
+numpy>=1.26.0
+requests>=2.32.0

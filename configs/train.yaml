@@ -1,0 +1,106 @@
+#data model lora training_args 
+
+#data数据
+data:
+  train_file: data/processed/train.jsonl
+  messages_file: data/processed/train_messages.jsonl
+  train_schema: {"messages": [{"role": "user", "content": "<problem>"}, {"role": "assistant", "content": "<solution>"} ]}
+  max_length: 2048
+  split_dataset_ratio: 0.1
+  num_proc: 4
+
+  
+#model模型
+model:
+  model_id: Qwen/Qwen2.5-Math-7B-Instruct
+  system_prompt: You are a math assistant that can answer questions and help with tasks.
+
+
+#lora训练参数，仅在注意力层进行悬挂
+lora_args:
+  lora_rank: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  lora_weight_path: null
+  target_modules: [q_proj, k_proj, v_proj, o_proj]  #所有线性层还是注意力层
+
+
+#训练参数
+training_args:
+  # path
+  output_dir: outputs/lora
+
+  # optimizer / lr
+  learning_rate: 1e-4
+  weight_decay: 0.1
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.05
+
+  # batch / steps
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 16
+  gradient_checkpointing: true
+  num_train_epochs: 1
+
+  # save / eval
+  save_strategy: steps
+  save_steps: 10
+  save_total_limit: 3              # 建议从 2 调到 3，降低 best 被删风险
+  eval_strategy: steps
+  eval_steps: 10                   # 必须和 save_steps 对齐（或为其倍数）
+  metric_for_best_model: eval_loss # 改：原来是 loss，应改为 eval_loss
+  greater_is_better: false
+  load_best_model_at_end: true
+
+  # logging / dataloader
+  logging_steps: 5
+  logging_first_step: true
+  report_to: ["tensorboard"]
+  dataloader_num_workers: 1
+  data_seed: 42
+
+  # precision 精度训练
+  bf16: true
+  fp16: false          # 与 bf16 二选一
+
+#模型合并
+export:
+  adapter_dir: outputs/lora       # 可省略，默认等于 training_args.output_dir
+  checkpoint: best                # best | latest | checkpoint-100
+  merged_dir: outputs/merged/best # 或 outputs/merged/checkpoint-100
+  torch_dtype: bfloat16
+
+
+# 运行环境 单机单卡 多机多卡
+runtime:
+  backend: local              # 现在用 local；以后改 torchrun / deepspeed
+  cuda_visible_devices: "0"   # 仅 backend=local 时生效
+
+# 分布式（现在 enabled: false，不用管）
+distributed:
+  # 分布式训练相关设置（如使用 torchrun 或 deepspeed 时启用）
+  enabled: false                # 是否启用分布式训练
+  nnodes: 1                     # 节点（服务器）数量，单机为 1
+  nproc_per_node: 1             # 每个节点上运行的进程数（一般等于 GPU 数）
+  master_addr: "127.0.0.1"      # 主节点地址（多机训练时设置主节点 IP）
+  master_port: 29500            # 主节点端口
+
+# DeepSpeed（现在 enabled: false）
+deepspeed:
+  enabled: false
+  config_file: configs/deepspeed/zero2.json
+
+
+# smoke 配置块用于“冒烟测试”（smoke test），即快速验证训练流程可跑通的小规模实验。设置 enabled: true 时，仅训练指定步数（max_steps），采样少量训练样本（max_train_samples），并将结果输出到单独目录（output_dir），避免覆盖正式产物。save_steps、eval_steps、logging_steps 控制测试期间的保存、评估与日志频率。
+# 手动挡：python -m src.train.sft --smoke
+smoke:
+  enabled: false
+  max_steps: 10
+  max_train_samples: 32    # 可选，只取前 N 条训练样本
+  output_dir: outputs/lora-smoke   # 可选，避免覆盖正式训练产物
+  save_steps: 5
+  eval_steps: 5
+  logging_steps: 1
+
+  
