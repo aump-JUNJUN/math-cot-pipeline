@@ -300,6 +300,8 @@ Docker：`docker compose --profile serve up -d vllm-api`。评测 infer 仍走 `
 | `bert_score` | pred_cot ↔ 金标 `COT` | DeBERTa token 级语义 F1（贪心匹配） |
 | `informativeness_chain` | pred_cot ↔ `problem` | MPNet 整句 embedding 余弦相似度（ROSCOE 简化） |
 
+参考论文见 [参考文献](#参考文献)。
+
 **重要局限：**
 
 1. **`bert_score` 基于 DeBERTa 512 token 截断**  
@@ -398,6 +400,21 @@ Python 3.11 · **ms-swift** · Hugging Face · PyTorch bf16 · **EvalScope**（`
 
 ---
 
+## 参考文献
+
+### 思维链（CoT）指标
+
+| 指标 | 参考 | 本仓库用法 |
+|------|------|------------|
+| `bert_score` | Zhang et al., [*BERTScore: Evaluating Text Generation with BERT*](https://arxiv.org/abs/1904.09675) (ICLR 2020) | DeBERTa 裁判模型；pred_cot vs 金标 `COT` 的 token 级语义 F1 |
+| `informativeness_chain` | Golovneva et al., [*ROSCOE: A Suite of Metrics for Scoring Step-by-Step Reasoning*](https://arxiv.org/abs/2212.07919) (ICLR 2023) · [ParlAI 代码](https://github.com/facebookresearch/ParlAI/tree/main/projects/roscoe) | **简化版**：整段 pred_cot vs `problem`（MPNet cosine）；**未**实现 ROSCOE 逐步 faithfulness（pred/gold CoT 结构不对齐，见 [`src/eval/README_CN.md`](src/eval/README_CN.md)） |
+
+更细的指标设计与局限说明见 [`src/eval/README_CN.md`](src/eval/README_CN.md)。
+
+---
+
 ## License
 
-MIT
+This repository is licensed under the [MIT License](LICENSE).
+
+**Note:** This license applies to the **code and documentation in this repository** only. Third-party assets (e.g. [NuminaMath-CoT](https://huggingface.co/datasets/AI-MO/NuminaMath-CoT), [Qwen2.5-Math-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Math-7B-Instruct)) remain subject to their respective upstream licenses on Hugging Face.

@@ -441,5 +441,12 @@ python -c "from sentence_transformers import SentenceTransformer; SentenceTransf
 
 ## 参考
 
+### 论文（CoT 指标）
+
+- **bert_score** — Zhang, T., Kishore, V., Wu, F., et al. [*BERTScore: Evaluating Text Generation with BERT*](https://arxiv.org/abs/1904.09675). ICLR 2020.
+- **informativeness_chain** — Golovneva, O., et al. [*ROSCOE: A Suite of Metrics for Scoring Step-by-Step Reasoning*](https://arxiv.org/abs/2212.07919). ICLR 2023. 本仓库为整段简化版，非逐步 ROSCOE。
+
+### 工具与文档
+
 - [ms-swift](https://github.com/modelscope/ms-swift) · [EvalScope](https://github.com/modelscope/evalscope) · [ParlAI ROSCOE](https://github.com/facebookresearch/ParlAI/tree/main/projects/roscoe)
 - [README_CN.md](../../README_CN.md) — 端到端流水线、项目定位、快速开始

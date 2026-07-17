@@ -282,6 +282,8 @@ Docker: `docker compose --profile serve up -d vllm-api`. Batch eval still uses `
 | `bert_score` | pred_cot ↔ gold `COT` | DeBERTa token-level semantic F1 (greedy matching) |
 | `informativeness_chain` | pred_cot ↔ `problem` | MPNet sentence embedding cosine (simplified ROSCOE) |
 
+See [References](#references) for papers.
+
 **Important limitations:**
 
 1. **`bert_score` truncates at 512 DeBERTa tokens.** Long math CoT often exceeds this (~90% of our holdout). The score mainly reflects the **first part** of reasoning vs gold—not full-CoT quality or proof correctness.
@@ -383,6 +385,21 @@ Python 3.11 · **ms-swift** · Hugging Face · PyTorch bf16 · **EvalScope** (`m
 
 ---
 
+## References
+
+### CoT metrics
+
+| Metric | Paper | Usage in this repo |
+|--------|-------|-------------------|
+| `bert_score` | Zhang et al., [*BERTScore: Evaluating Text Generation with BERT*](https://arxiv.org/abs/1904.09675) (ICLR 2020) | DeBERTa judge; token-level semantic F1 between pred_cot and gold `COT` |
+| `informativeness_chain` | Golovneva et al., [*ROSCOE: A Suite of Metrics for Scoring Step-by-Step Reasoning*](https://arxiv.org/abs/2212.07919) (ICLR 2023) · [ParlAI code](https://github.com/facebookresearch/ParlAI/tree/main/projects/roscoe) | **Simplified**: whole pred_cot vs `problem` (MPNet cosine); **no** step-based ROSCOE faithfulness (pred/gold CoT structure mismatch—see [`src/eval/README_EN.md`](src/eval/README_EN.md)) |
+
+More metric design detail: [`src/eval/README_EN.md`](src/eval/README_EN.md).
+
+---
+
 ## License
 
-MIT
+This repository is licensed under the [MIT License](LICENSE).
+
+**Note:** This license applies to the **code and documentation in this repository** only. Third-party assets (e.g. [NuminaMath-CoT](https://huggingface.co/datasets/AI-MO/NuminaMath-CoT), [Qwen2.5-Math-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Math-7B-Instruct)) remain subject to their respective upstream licenses on Hugging Face.

@@ -429,5 +429,12 @@ For context-aware CoT metrics, implement `apply_with_context`—see `Informative
 
 ## References
 
+### Papers (CoT metrics)
+
+- **bert_score** — Zhang, T., Kishore, V., Wu, F., et al. [*BERTScore: Evaluating Text Generation with BERT*](https://arxiv.org/abs/1904.09675). ICLR 2020.
+- **informativeness_chain** — Golovneva, O., et al. [*ROSCOE: A Suite of Metrics for Scoring Step-by-Step Reasoning*](https://arxiv.org/abs/2212.07919). ICLR 2023. This repo uses a **whole-text simplified** variant, not step-based ROSCOE.
+
+### Tools & docs
+
 - [ms-swift](https://github.com/modelscope/ms-swift) · [EvalScope](https://github.com/modelscope/evalscope) · [ParlAI ROSCOE](https://github.com/facebookresearch/ParlAI/tree/main/projects/roscoe)
 - [README_EN.md](../../README_EN.md) — full pipeline, project scope, quick start
