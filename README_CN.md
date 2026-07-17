@@ -20,7 +20,22 @@
 - 如何通过 `registry` 注册指标、重算 metrics 而无需重跑 infer
 - 如何汇总 base vs fine-tuned 等多 run 对比（JSON + 柱状图）
 
-因此，`reports/metrics/` 中的数值应视为 **pipeline 冒烟与相对比较**（ft vs base），不宜单独作为「模型能力很强/很弱」的充分依据。详见下文 [参考实验结果](#参考实验结果) 与 [指标说明与局限](#指标说明与局限)。
+因此，`reports/metrics/` 中的数值应视为 **pipeline 冒烟与相对比较**（ft vs base），不宜单独作为「模型能力很强/很弱」的充分依据。详见下文 [训练曲线（参考）](#训练曲线参考) 与 [参考实验结果](#参考实验结果) 及 [指标说明与局限](#指标说明与局限)。
+
+---
+
+## 训练曲线（参考）
+
+默认配置下（约 **778 train**，单次 LoRA SFT、1 epoch / 44 steps，按 `eval_loss` 选 best checkpoint，未做系统超参搜索），训练 loss 曲线如下：
+
+![LoRA SFT 训练 loss](docs/results/training_loss.png)
+
+产物路径：
+
+- 仓库快照（随 git 提交）：`docs/results/training_loss.png`
+- 本地复现输出：`outputs/lora/images/loss.png`（`./scripts/run_train.sh` 结束后由 `src/train/sft.py` 生成）
+
+> 训练曲线仅作 **pipeline 可跑通与收敛参考**；最终效果以 holdout 评测（见下节）为准。
 
 ---
 

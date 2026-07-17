@@ -4,6 +4,8 @@
 
 End-to-end math Chain-of-Thought pipeline: data cleaning → LoRA SFT → dual-track eval (answer + CoT) → multi-run report → optional vLLM.
 
+![LoRA SFT training loss](docs/results/training_loss.png)
+
 ![base vs ft metrics compare](docs/results/compare_all.png)
 
 - **Full guide (English):** [README_EN.md](README_EN.md)

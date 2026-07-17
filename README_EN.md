@@ -20,7 +20,22 @@ What we aim to demonstrate:
 - Registering metrics via a **registry** and recomputing scores without re-running inference
 - Aggregating base vs fine-tuned (and other) runs into JSON + bar charts
 
-Numbers under `reports/metrics/` should be read as **pipeline sanity checks and relative comparisons** (ft vs base), not as definitive proof of model capability. See [Reference results](#reference-results) and [Metrics & limitations](#metrics--limitations).
+Numbers under `reports/metrics/` should be read as **pipeline sanity checks and relative comparisons** (ft vs base), not as definitive proof of model capability. See [Training loss (reference)](#training-loss-reference), [Reference results](#reference-results), and [Metrics & limitations](#metrics--limitations).
+
+---
+
+## Training loss (reference)
+
+With default settings (~**778 train**, single LoRA SFT run, 1 epoch / 44 steps, best checkpoint by `eval_loss`, no systematic hyperparameter search):
+
+![LoRA SFT training loss](docs/results/training_loss.png)
+
+Artifacts:
+
+- Committed snapshot: `docs/results/training_loss.png`
+- Local pipeline output: `outputs/lora/images/loss.png` (written by `src/train/sft.py` after `./scripts/run_train.sh`)
+
+> The loss curve is for **pipeline sanity and convergence only**; holdout evaluation (below) is the primary reference for downstream quality.
 
 ---
 
